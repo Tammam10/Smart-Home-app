@@ -11,8 +11,12 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { auth, db } from "../firebase/config";
+import {
+  notifyMotionDetected,
+  registerForLocalNotifications,
+} from "../services/notificationService";
 
 const SystemContext = createContext(null);
 
@@ -33,10 +37,17 @@ const DEFAULT_DEVICES = {
   gateStatus: "closed",
 };
 
+const MOTION_NOTIFICATION_COOLDOWN_MS = 60 * 1000;
+
 export function SystemProvider({ children }) {
   const [devices, setDevices] = useState(DEFAULT_DEVICES);
   const [activityLog, setActivityLog] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  const motionNotificationReady = useRef(false);
+  const previousMotionDetected = useRef(DEFAULT_DEVICES.motionDetected);
+  const lastMotionNotificationAt = useRef(0);
 
   useEffect(() => {
     let unsubscribeDevices = null;
@@ -47,11 +58,21 @@ export function SystemProvider({ children }) {
       if (unsubscribeActivity) { unsubscribeActivity(); unsubscribeActivity = null; }
 
       if (!user) {
+        setCurrentUserId(null);
         setDevices(DEFAULT_DEVICES);
         setActivityLog([]);
         setLoading(false);
+        motionNotificationReady.current = false;
+        previousMotionDetected.current = DEFAULT_DEVICES.motionDetected;
+        lastMotionNotificationAt.current = 0;
         return;
       }
+
+      setCurrentUserId(user.uid);
+      setLoading(true);
+      motionNotificationReady.current = false;
+      previousMotionDetected.current = DEFAULT_DEVICES.motionDetected;
+      lastMotionNotificationAt.current = 0;
 
       // Listen to device state document
       const docRef = deviceDocRef(user.uid);
@@ -96,6 +117,35 @@ export function SystemProvider({ children }) {
       if (unsubscribeActivity) unsubscribeActivity();
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    registerForLocalNotifications().catch(() => {});
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId || loading) {
+      previousMotionDetected.current = devices.motionDetected;
+      return;
+    }
+
+    if (!motionNotificationReady.current) {
+      motionNotificationReady.current = true;
+      previousMotionDetected.current = devices.motionDetected;
+      return;
+    }
+
+    const wasMotionDetected = previousMotionDetected.current;
+    previousMotionDetected.current = devices.motionDetected;
+
+    if (!devices.motionDetected || wasMotionDetected) return;
+
+    const now = Date.now();
+    if (now - lastMotionNotificationAt.current < MOTION_NOTIFICATION_COOLDOWN_MS) return;
+
+    lastMotionNotificationAt.current = now;
+    notifyMotionDetected({ temperatureLabel: `${devices.temperature}°C` }).catch(() => {});
+  }, [currentUserId, devices.motionDetected, devices.temperature, loading]);
 
   // Write a new entry to the activity subcollection with a server-side timestamp
   const logActivity = (entry) => {
