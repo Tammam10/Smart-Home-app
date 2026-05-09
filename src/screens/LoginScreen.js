@@ -1,5 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
+import { get, ref } from "firebase/database";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { auth } from "../firebase/config";
+import { auth, rtdb } from "../firebase/config";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -45,7 +47,18 @@ export default function LoginScreen({ navigation }) {
     if (!validate()) return;
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const { user } = await signInWithEmailAndPassword(auth, email.trim(), password);
+      // Fetch passcode from RTDB and save account for PasscodeLoginScreen
+      try {
+        const snap = await get(ref(rtdb, `users/${user.uid}/passcode`));
+        const passcode = snap.exists() ? String(snap.val()) : null;
+        const raw = await AsyncStorage.getItem("@smart_home_accounts");
+        const list = raw ? JSON.parse(raw) : [];
+        const idx = list.findIndex((a) => a.uid === user.uid);
+        const entry = { uid: user.uid, email: email.trim(), passcode, password };
+        if (idx >= 0) list[idx] = entry; else list.push(entry);
+        await AsyncStorage.setItem("@smart_home_accounts", JSON.stringify(list));
+      } catch { /* silent — don't block login */ }
       navigation.replace("Home");
     } catch (error) {
       const messages = {

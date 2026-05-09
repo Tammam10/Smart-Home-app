@@ -1,151 +1,221 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { signOut } from "firebase/auth";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../firebase/config";
+import { useSettings } from "../context/SettingsContext";
+import { useTheme } from "../context/ThemeContext";
 
 export default function ProfileScreen({ navigation }) {
   const user = auth.currentUser;
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { tempUnit, setTempUnit } = useSettings();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigation.replace("Login");
-    } catch (error) {
-      Alert.alert("Error", "Failed to log out. Please try again.");
-    }
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              navigation.replace("PasscodeLogin");
+            } catch {
+              Alert.alert("Error", "Failed to log out. Please try again.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+
+      {/* ── TOP BAR ──────────────────────────────────────────────────── */}
+      <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
           onPress={() => navigation.goBack()}
         >
-          <MaterialIcons name="arrow-back" size={24} color="#2f80ed" />
+          <MaterialIcons name="arrow-back" size={22} color={theme.primary} />
         </TouchableOpacity>
-
-        <Text style={styles.title}>Profile</Text>
-
-        <View style={styles.topSpacer} />
+        <Text style={[styles.topBarTitle, { color: theme.text }]}>Profile</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <MaterialIcons name="person" size={54} color="#2f80ed" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* ── AVATAR CARD ────────────────────────────────────────────── */}
+        <View style={[styles.avatarCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <View style={[styles.avatarCircle, { backgroundColor: theme.primarySoft }]}>
+            <MaterialIcons name="person" size={52} color={theme.primary} />
+          </View>
+          <Text style={[styles.userName, { color: theme.text }]}>
+            {user?.displayName ?? "User"}
+          </Text>
+          <Text style={[styles.userEmail, { color: theme.subtext }]}>
+            {user?.email ?? ""}
+          </Text>
+          <View style={[styles.rolePill, { backgroundColor: theme.statDevice.bg }]}>
+            <MaterialIcons name="shield" size={12} color={theme.statDevice.text} />
+            <Text style={[styles.roleText, { color: theme.statDevice.text }]}>Home Owner</Text>
+          </View>
         </View>
 
-        <Text style={styles.username}>{user?.displayName ?? "User"}</Text>
-        <Text style={styles.email}>{user?.email ?? ""}</Text>
-      </View>
+        {/* ── APPEARANCE ─────────────────────────────────────────────── */}
+        <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.sectionLabel, { color: theme.subtext }]}>APPEARANCE</Text>
 
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => navigation.navigate("ChangePassword")}
-        >
-          <MaterialIcons name="lock" size={22} color="#fff" />
-          <Text style={styles.actionText}>Change Password</Text>
-        </TouchableOpacity>
+          {/* Dark mode */}
+          <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIconBox, { backgroundColor: isDark ? "#1e3a8a" : "#eff6ff" }]}>
+                <MaterialIcons name={isDark ? "dark-mode" : "light-mode"} size={20} color={isDark ? "#93c5fd" : "#2563eb"} />
+              </View>
+              <View>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Dark Mode</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>{isDark ? "Currently dark" : "Currently light"}</Text>
+              </View>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              thumbColor={theme.primary}
+              trackColor={{ false: theme.border, true: theme.primary + "60" }}
+            />
+          </View>
 
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.logoutBtn]}
-          onPress={handleLogout}
-        >
-          <MaterialIcons name="logout" size={22} color="#fff" />
-          <Text style={styles.actionText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Temperature unit */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIconBox, { backgroundColor: isDark ? "#431407" : "#fff7ed" }]}>
+                <MaterialIcons name="thermostat" size={20} color="#ea580c" />
+              </View>
+              <View>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Temperature Unit</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>Shown on dashboard</Text>
+              </View>
+            </View>
+            <View style={[styles.unitToggle, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
+              <TouchableOpacity
+                style={[styles.unitBtn, tempUnit === "C" && { backgroundColor: theme.primary }]}
+                onPress={() => setTempUnit("C")}
+              >
+                <Text style={[styles.unitBtnText, { color: tempUnit === "C" ? "#fff" : theme.subtext }]}>°C</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.unitBtn, tempUnit === "F" && { backgroundColor: theme.primary }]}
+                onPress={() => setTempUnit("F")}
+              >
+                <Text style={[styles.unitBtnText, { color: tempUnit === "F" ? "#fff" : theme.subtext }]}>°F</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* ── ACCOUNT ────────────────────────────────────────────────── */}
+        <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.sectionLabel, { color: theme.subtext }]}>ACCOUNT</Text>
+
+          <TouchableOpacity
+            style={[styles.settingRow, { borderBottomColor: theme.border }]}
+            onPress={() => navigation.navigate("ChangePassword")}
+            activeOpacity={0.75}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIconBox, { backgroundColor: isDark ? "#1e3a8a" : "#eff6ff" }]}>
+                <MaterialIcons name="lock" size={20} color={theme.primary} />
+              </View>
+              <View>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Change Password</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>Update your credentials</Text>
+              </View>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.subtext} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.settingRow, { borderBottomWidth: 0 }]}
+            onPress={handleLogout}
+            activeOpacity={0.75}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIconBox, { backgroundColor: isDark ? "#450a0a" : "#fee2e2" }]}>
+                <MaterialIcons name="logout" size={20} color="#dc2626" />
+              </View>
+              <View>
+                <Text style={[styles.settingTitle, { color: "#dc2626" }]}>Logout</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>Sign out of your account</Text>
+              </View>
+            </View>
+            <MaterialIcons name="chevron-right" size={22} color={theme.subtext} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#e6f4ff",
-    padding: 16,
-  },
+  container: { flex: 1, paddingTop: 52 },
+  scroll:    { paddingBottom: 24 },
 
+  // Top bar
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1,
   },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 12,
+    justifyContent: "center", alignItems: "center",
+    borderWidth: 1, elevation: 2,
+  },
+  topBarTitle: { fontSize: 18, fontWeight: "700" },
 
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
+  // Avatar card
+  avatarCard: {
+    margin: 16, borderRadius: 22, padding: 24,
+    alignItems: "center", elevation: 3, borderWidth: 1,
+    shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
+  avatarCircle: {
+    width: 88, height: 88, borderRadius: 44,
+    justifyContent: "center", alignItems: "center", marginBottom: 14,
+  },
+  userName:  { fontSize: 22, fontWeight: "800" },
+  userEmail: { fontSize: 14, marginTop: 4 },
+  rolePill:  { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  roleText:  { fontSize: 12, fontWeight: "700" },
 
-  topSpacer: {
-    width: 42,
+  // Sections
+  section: {
+    marginHorizontal: 16, marginTop: 12, borderRadius: 18,
+    borderWidth: 1, overflow: "hidden", elevation: 2,
+    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
+  sectionLabel: {
+    fontSize: 11, fontWeight: "800", letterSpacing: 0.8,
+    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6,
+  },
+  settingRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1,
+  },
+  settingLeft:    { flexDirection: "row", alignItems: "center", gap: 14, flex: 1 },
+  settingIconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center" },
+  settingTitle:   { fontSize: 15, fontWeight: "600" },
+  settingSubtitle:{ fontSize: 12, marginTop: 2 },
 
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-
-  profileCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
-    padding: 22,
-    alignItems: "center",
-    elevation: 5,
-    marginBottom: 20,
-  },
-
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#eef5ff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  username: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#111827",
-    marginTop: 4,
-  },
-
-  email: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginTop: 6,
-  },
-
-  actionsContainer: {
-    gap: 14,
-  },
-
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#2f80ed",
-    padding: 16,
-    borderRadius: 14,
-  },
-
-  logoutBtn: {
-    backgroundColor: "#ef4444",
-  },
-
-  actionText: {
-    color: "#fff",
-    fontWeight: "bold",
-    marginLeft: 10,
-    fontSize: 15,
-  },
+  // Temperature unit toggle
+  unitToggle: { flexDirection: "row", borderRadius: 10, borderWidth: 1, overflow: "hidden" },
+  unitBtn:    { paddingHorizontal: 14, paddingVertical: 7 },
+  unitBtnText:{ fontSize: 14, fontWeight: "700" },
 });

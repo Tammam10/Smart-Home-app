@@ -1,4 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import {
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -10,11 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
 import { auth } from "../firebase/config";
 
 export default function AuthScreen({ navigation }) {
@@ -89,7 +89,8 @@ export default function AuthScreen({ navigation }) {
       navigation.replace("Home");
     } catch (error) {
       const messages = {
-        "auth/email-already-in-use": "An account with this email already exists.",
+        "auth/email-already-in-use":
+          "An account with this email already exists.",
         "auth/invalid-email": "Please enter a valid email address.",
         "auth/weak-password": "Password must be at least 6 characters.",
       };
@@ -107,7 +108,10 @@ export default function AuthScreen({ navigation }) {
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      Alert.alert("Reset Email Sent", `A password reset link has been sent to ${email.trim()}.`);
+      Alert.alert(
+        "Reset Email Sent",
+        `A password reset link has been sent to ${email.trim()}.`,
+      );
     } catch (error) {
       const messages = {
         "auth/user-not-found": "No account found with this email.",
@@ -213,7 +217,11 @@ export default function AuthScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={handleLogin}
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -233,7 +241,11 @@ export default function AuthScreen({ navigation }) {
             <ActivityIndicator color="#2f80ed" />
           ) : (
             <>
-              <MaterialIcons name="person-add-alt-1" size={20} color="#2f80ed" />
+              <MaterialIcons
+                name="person-add-alt-1"
+                size={20}
+                color="#2f80ed"
+              />
               <Text style={styles.registerButtonText}>Register</Text>
             </>
           )}

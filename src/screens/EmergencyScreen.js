@@ -10,7 +10,7 @@ import {
 import { useSystem } from "../context/SystemContext";
 
 export default function EmergencyScreen({ navigation }) {
-  const { alarmActive, activateEmergencyMode, deactivateEmergencyMode } =
+  const { alarmActive, gateStatus, activateEmergencyMode, deactivateEmergencyMode } =
     useSystem();
 
   const handleEmergencyToggle = () => {
@@ -18,7 +18,7 @@ export default function EmergencyScreen({ navigation }) {
       activateEmergencyMode();
       Alert.alert(
         "Emergency Mode Activated",
-        "All lights turned ON, doors LOCKED, and alarm/buzzer TRIGGERED.",
+        "All lights turned ON, doors LOCKED, gate CLOSING, and alarm/buzzer TRIGGERED.",
       );
     } else {
       deactivateEmergencyMode();
@@ -76,6 +76,11 @@ export default function EmergencyScreen({ navigation }) {
           <MaterialIcons name="campaign" size={20} color="#ef4444" />
           <Text style={styles.infoText}>Trigger alarm / buzzer alert</Text>
         </View>
+
+        <View style={styles.infoRow}>
+          <MaterialIcons name="sensor-door" size={20} color="#7c3aed" />
+          <Text style={styles.infoText}>Close the gate automatically</Text>
+        </View>
       </View>
 
       <View style={styles.statusCard}>
@@ -88,6 +93,25 @@ export default function EmergencyScreen({ navigation }) {
         >
           {alarmActive ? "ACTIVE" : "INACTIVE"}
         </Text>
+
+        {alarmActive && (
+          <View style={styles.statusDetails}>
+            <View style={styles.statusDetailRow}>
+              <MaterialIcons name="sensor-door" size={16} color="#7c3aed" />
+              <Text style={styles.statusDetailText}>
+                Gate: {gateStatus.toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.statusDetailRow}>
+              <MaterialIcons name="lock" size={16} color="#3b82f6" />
+              <Text style={styles.statusDetailText}>Door: LOCKED</Text>
+            </View>
+            <View style={styles.statusDetailRow}>
+              <MaterialIcons name="campaign" size={16} color="#ef4444" />
+              <Text style={styles.statusDetailText}>Alarm: ON</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <TouchableOpacity
@@ -207,6 +231,21 @@ const styles = StyleSheet.create({
   statusValue: {
     fontSize: 26,
     fontWeight: "bold",
+  },
+  statusDetails: {
+    marginTop: 14,
+    gap: 8,
+    alignSelf: "stretch",
+  },
+  statusDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusDetailText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
   },
   activeStatus: {
     color: "#ef4444",

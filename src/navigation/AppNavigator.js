@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AboutScreen from "../screens/AboutScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import EmergencyScreen from "../screens/EmergencyScreen";
+import GateScreen from "../screens/GateScreen";
+import PasscodeScreen from "../screens/PasscodeScreen";
+import PasscodeLoginScreen from "../screens/PasscodeLoginScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ProfileScreen from "../screens/ProfileScreen";
@@ -60,6 +63,21 @@ export default function AppNavigator() {
         <Stack.Screen
           name="ChangePassword"
           component={ChangePasswordScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Gate"
+          component={GateScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Passcode"
+          component={PasscodeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PasscodeLogin"
+          component={PasscodeLoginScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
