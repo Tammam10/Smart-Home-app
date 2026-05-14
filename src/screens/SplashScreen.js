@@ -78,8 +78,8 @@ export default function SplashScreen({ navigation }) {
       }
     };
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      targetRoute  = user ? "PasscodeLogin" : "Login";
+    const unsubscribe = onAuthStateChanged(auth, () => {
+      targetRoute  = "PasscodeLogin";
       authResolved = true;
       tryNavigate();
     });

@@ -1,5 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { signOut } from "firebase/auth";
+import { signOut } from "firebase/auth"; // kept for real sign-out on account switch
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { auth } from "../firebase/config";
 import { useSettings } from "../context/SettingsContext";
@@ -14,21 +14,14 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = () => {
     Alert.alert(
-      "Logout",
-      "Are you sure you want to log out?",
+      "Lock Screen",
+      "Return to the passcode screen?",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Logout",
+          text: "Lock",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await signOut(auth);
-              navigation.replace("Login");
-            } catch {
-              Alert.alert("Error", "Failed to log out. Please try again.");
-            }
-          },
+          onPress: () => navigation.replace("PasscodeLogin"),
         },
       ],
     );
@@ -147,11 +140,11 @@ export default function ProfileScreen({ navigation }) {
           >
             <View style={styles.settingLeft}>
               <View style={[styles.settingIconBox, { backgroundColor: isDark ? "#450a0a" : "#fee2e2" }]}>
-                <MaterialIcons name="logout" size={20} color="#dc2626" />
+                <MaterialIcons name="lock" size={20} color="#dc2626" />
               </View>
               <View>
-                <Text style={[styles.settingTitle, { color: "#dc2626" }]}>Logout</Text>
-                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>Sign out of your account</Text>
+                <Text style={[styles.settingTitle, { color: "#dc2626" }]}>Lock Screen</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.subtext }]}>Return to passcode screen</Text>
               </View>
             </View>
             <MaterialIcons name="chevron-right" size={22} color={theme.subtext} />
