@@ -7,6 +7,8 @@ import { useTheme } from "../context/ThemeContext";
 
 export default function ProfileScreen({ navigation }) {
   const user = auth.currentUser;
+  const rawName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const { theme, isDark, toggleTheme } = useTheme();
   const { tempUnit, setTempUnit } = useSettings();
 
@@ -22,7 +24,7 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             try {
               await signOut(auth);
-              navigation.replace("PasscodeLogin");
+              navigation.replace("Login");
             } catch {
               Alert.alert("Error", "Failed to log out. Please try again.");
             }
@@ -55,7 +57,7 @@ export default function ProfileScreen({ navigation }) {
             <MaterialIcons name="person" size={52} color={theme.primary} />
           </View>
           <Text style={[styles.userName, { color: theme.text }]}>
-            {user?.displayName ?? "User"}
+            {displayName}
           </Text>
           <Text style={[styles.userEmail, { color: theme.subtext }]}>
             {user?.email ?? ""}
