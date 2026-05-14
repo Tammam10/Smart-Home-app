@@ -8,10 +8,11 @@ import {
   View,
 } from "react-native";
 import { useSystem } from "../context/SystemContext";
+import { useTheme } from "../context/ThemeContext";
 
 export default function EmergencyScreen({ navigation }) {
-  const { alarmActive, gateStatus, activateEmergencyMode, deactivateEmergencyMode } =
-    useSystem();
+  const { alarmActive, gateStatus, activateEmergencyMode, deactivateEmergencyMode } = useSystem();
+  const { theme } = useTheme();
 
   const handleEmergencyToggle = () => {
     if (!alarmActive) {
@@ -30,67 +31,55 @@ export default function EmergencyScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      style={{ backgroundColor: theme.bg }}
+      contentContainerStyle={[styles.container, { backgroundColor: theme.bg }]}
+    >
       <View style={styles.topBar}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: theme.card, borderColor: theme.border }]}
           onPress={() => navigation.goBack()}
         >
           <MaterialIcons name="arrow-back" size={24} color="#ef4444" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Emergency Mode</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Emergency Mode</Text>
 
         <View style={styles.topSpacer} />
       </View>
 
-      <View style={styles.headerCard}>
+      <View style={[styles.headerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.iconCircle}>
           <MaterialIcons name="warning" size={56} color="#ef4444" />
         </View>
 
-        <Text style={styles.headerTitle}>Security Emergency Control</Text>
-        <Text style={styles.headerSubtitle}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Security Emergency Control</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>
           Use this mode in dangerous situations to secure your home immediately.
         </Text>
       </View>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>
+      <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.infoTitle, { color: theme.text }]}>
           What happens when Emergency Mode is activated?
         </Text>
 
-        <View style={styles.infoRow}>
-          <MaterialIcons name="lightbulb" size={20} color="#f59e0b" />
-          <Text style={styles.infoText}>
-            Turn ON all indoor and outdoor lights
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <MaterialIcons name="lock" size={20} color="#3b82f6" />
-          <Text style={styles.infoText}>Lock all connected doors</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <MaterialIcons name="campaign" size={20} color="#ef4444" />
-          <Text style={styles.infoText}>Trigger alarm / buzzer alert</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <MaterialIcons name="sensor-door" size={20} color="#7c3aed" />
-          <Text style={styles.infoText}>Close the gate automatically</Text>
-        </View>
+        {[
+          { icon: "lightbulb",    color: "#f59e0b", text: "Turn ON all indoor and outdoor lights" },
+          { icon: "lock",         color: "#3b82f6", text: "Lock all connected doors" },
+          { icon: "campaign",     color: "#ef4444", text: "Trigger alarm / buzzer alert" },
+          { icon: "sensor-door",  color: "#7c3aed", text: "Close the gate automatically" },
+        ].map((item, i) => (
+          <View key={i} style={styles.infoRow}>
+            <MaterialIcons name={item.icon} size={20} color={item.color} />
+            <Text style={[styles.infoText, { color: theme.text }]}>{item.text}</Text>
+          </View>
+        ))}
       </View>
 
-      <View style={styles.statusCard}>
-        <Text style={styles.statusLabel}>Current Status</Text>
-        <Text
-          style={[
-            styles.statusValue,
-            alarmActive ? styles.activeStatus : styles.inactiveStatus,
-          ]}
-        >
+      <View style={[styles.statusCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.statusLabel, { color: theme.subtext }]}>Current Status</Text>
+        <Text style={[styles.statusValue, alarmActive ? styles.activeStatus : styles.inactiveStatus]}>
           {alarmActive ? "ACTIVE" : "INACTIVE"}
         </Text>
 
@@ -98,17 +87,17 @@ export default function EmergencyScreen({ navigation }) {
           <View style={styles.statusDetails}>
             <View style={styles.statusDetailRow}>
               <MaterialIcons name="sensor-door" size={16} color="#7c3aed" />
-              <Text style={styles.statusDetailText}>
+              <Text style={[styles.statusDetailText, { color: theme.text }]}>
                 Gate: {gateStatus.toUpperCase()}
               </Text>
             </View>
             <View style={styles.statusDetailRow}>
               <MaterialIcons name="lock" size={16} color="#3b82f6" />
-              <Text style={styles.statusDetailText}>Door: LOCKED</Text>
+              <Text style={[styles.statusDetailText, { color: theme.text }]}>Door: LOCKED</Text>
             </View>
             <View style={styles.statusDetailRow}>
               <MaterialIcons name="campaign" size={16} color="#ef4444" />
-              <Text style={styles.statusDetailText}>Alarm: ON</Text>
+              <Text style={[styles.statusDetailText, { color: theme.text }]}>Alarm: ON</Text>
             </View>
           </View>
         )}
@@ -124,9 +113,7 @@ export default function EmergencyScreen({ navigation }) {
           color="#fff"
         />
         <Text style={styles.emergencyButtonText}>
-          {alarmActive
-            ? "Deactivate Emergency Mode"
-            : "Activate Emergency Mode"}
+          {alarmActive ? "Deactivate Emergency Mode" : "Activate Emergency Mode"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -136,7 +123,6 @@ export default function EmergencyScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#e6f4ff",
     padding: 16,
   },
   topBar: {
@@ -149,26 +135,25 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#ffffff",
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 3,
+    elevation: 2,
   },
-  topSpacer: {
-    width: 42,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-  },
+  topSpacer: { width: 42 },
+  title: { fontSize: 20, fontWeight: "bold" },
+
   headerCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 22,
     padding: 22,
     alignItems: "center",
-    elevation: 5,
+    elevation: 3,
+    borderWidth: 1,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   iconCircle: {
     width: 92,
@@ -179,80 +164,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#111827",
-    textAlign: "center",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 22,
-  },
+  headerTitle: { fontSize: 22, fontWeight: "bold", textAlign: "center" },
+  headerSubtitle: { fontSize: 14, textAlign: "center", marginTop: 8, lineHeight: 22 },
+
   infoCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 18,
-    elevation: 4,
+    elevation: 3,
+    borderWidth: 1,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 14,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  infoText: {
-    marginLeft: 10,
-    fontSize: 14,
-    color: "#374151",
-  },
+  infoTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 14 },
+  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  infoText: { marginLeft: 10, fontSize: 14 },
+
   statusCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 18,
-    elevation: 4,
+    elevation: 3,
+    borderWidth: 1,
     marginBottom: 18,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-  statusLabel: {
-    fontSize: 15,
-    color: "#6b7280",
-    marginBottom: 8,
-  },
-  statusValue: {
-    fontSize: 26,
-    fontWeight: "bold",
-  },
-  statusDetails: {
-    marginTop: 14,
-    gap: 8,
-    alignSelf: "stretch",
-  },
-  statusDetailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statusDetailText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  activeStatus: {
-    color: "#ef4444",
-  },
-  inactiveStatus: {
-    color: "#10b981",
-  },
+  statusLabel: { fontSize: 15, marginBottom: 8 },
+  statusValue: { fontSize: 26, fontWeight: "bold" },
+  activeStatus: { color: "#ef4444" },
+  inactiveStatus: { color: "#10b981" },
+  statusDetails: { marginTop: 14, gap: 8, alignSelf: "stretch" },
+  statusDetailRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  statusDetailText: { fontSize: 13, fontWeight: "600" },
+
   emergencyButton: {
     flexDirection: "row",
     backgroundColor: "#ef4444",
@@ -261,14 +210,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
+    gap: 10,
   },
-  deactivateButton: {
-    backgroundColor: "#111827",
-  },
-  emergencyButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
+  deactivateButton: { backgroundColor: "#111827" },
+  emergencyButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" },
 });

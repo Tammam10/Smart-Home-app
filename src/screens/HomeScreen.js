@@ -1,9 +1,10 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator, Animated, Modal,
   ScrollView, StyleSheet, Text,
-  TouchableOpacity, View,
+  TouchableOpacity, useWindowDimensions, View,
 } from "react-native";
 import WebView from "react-native-webview";
 import DeviceCard from "../components/DeviceCard";
@@ -25,6 +26,8 @@ export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { tempUnit } = useSettings();
   const user = auth.currentUser;
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const [isCameraFullScreen, setIsCameraFullScreen] = useState(false);
   const [currentDateTime, setCurrentDateTime]       = useState(new Date());
@@ -77,6 +80,15 @@ export default function HomeScreen({ navigation }) {
     const t = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Unlock orientation in fullscreen, lock back to portrait on close
+  useEffect(() => {
+    if (isCameraFullScreen) {
+      ScreenOrientation.unlockAsync();
+    } else {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+  }, [isCameraFullScreen]);
 
   // Keep a ref so the interval always calls the latest simulateSensors
   // without restarting on every Firestore update
@@ -409,32 +421,57 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* ── FULLSCREEN CAMERA ────────────────────────────────────────── */}
-      <Modal visible={isCameraFullScreen} animationType="slide" transparent={false}>
-        <View style={[styles.fullScreenContainer, { backgroundColor: "#0f172a" }]}>
-          <View style={styles.fullScreenTopBar}>
-            <Text style={styles.fullScreenTitle}>Live Camera Stream</Text>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setIsCameraFullScreen(false)}>
-              <MaterialIcons name="close" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
+      <Modal
+        visible={isCameraFullScreen}
+        animationType="fade"
+        transparent={false}
+        statusBarTranslucent
+        supportedOrientations={["portrait", "landscape"]}
+      >
+        <View style={styles.fsRoot}>
+
+          {/* Camera — fills entire screen */}
           {streamUrl ? (
             <WebView
               source={{ uri: streamUrl }}
-              style={styles.fullScreenCamera}
+              style={StyleSheet.absoluteFill}
               scrollEnabled={false}
               bounces={false}
               mediaPlaybackRequiresUserAction={false}
             />
           ) : (
-            <View style={styles.fullScreenCamera}>
-              <MaterialIcons name="camera-alt" size={72} color="#475569" />
-              <Text style={styles.fullScreenPlaceholder}>Camera offline</Text>
+            <View style={styles.fsOffline}>
+              <MaterialIcons name="videocam-off" size={64} color="#334155" />
+              <Text style={styles.fsOfflineText}>Camera offline</Text>
+              <Text style={styles.fsOfflineSub}>Start your ESP32-S3 to stream</Text>
             </View>
           )}
-          <View style={styles.fullScreenClock}>
-            <Text style={styles.fullScreenTime}>{formatTime(currentDateTime)}</Text>
-            <Text style={styles.fullScreenDate}>{formatDate(currentDateTime)}</Text>
+
+          {/* Top overlay — LIVE pill + title + close */}
+          <View style={[styles.fsTopBar, isLandscape && styles.fsTopBarLandscape]}>
+            <View style={styles.fsLivePill}>
+              <View style={styles.fsLiveDot} />
+              <Text style={styles.fsLiveText}>LIVE</Text>
+            </View>
+
+            {!isLandscape && (
+              <Text style={styles.fsTitle}>Live Camera</Text>
+            )}
+
+            <TouchableOpacity
+              style={styles.fsCloseBtn}
+              onPress={() => setIsCameraFullScreen(false)}
+            >
+              <MaterialIcons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
+
+          {/* Bottom overlay — clock */}
+          <View style={[styles.fsBottomBar, isLandscape && styles.fsBottomBarLandscape]}>
+            <Text style={styles.fsTime}>{formatTime(currentDateTime)}</Text>
+            <Text style={styles.fsDate}>{formatDate(currentDateTime)}</Text>
+          </View>
+
         </View>
       </Modal>
     </>
@@ -538,13 +575,50 @@ const styles = StyleSheet.create({
   fabItem:      { position: "absolute", width: 46, height: 46, borderRadius: 23, backgroundColor: "#1e293b", justifyContent: "center", alignItems: "center", elevation: 6 },
 
   // Fullscreen camera
-  fullScreenContainer: { flex: 1, paddingTop: 50, paddingHorizontal: 16, paddingBottom: 24 },
-  fullScreenTopBar:    { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  fullScreenTitle:     { color: "#fff", fontSize: 20, fontWeight: "700" },
-  closeBtn:            { width: 38, height: 38, borderRadius: 10, backgroundColor: "#1e293b", justifyContent: "center", alignItems: "center" },
-  fullScreenCamera:    { flex: 1, borderRadius: 20, backgroundColor: "#1e293b", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#334155" },
-  fullScreenPlaceholder:{ marginTop: 14, color: "#94a3b8", fontSize: 16 },
-  fullScreenClock:     { marginTop: 16, alignItems: "center" },
-  fullScreenTime:      { color: "#fff", fontSize: 30, fontWeight: "700" },
-  fullScreenDate:      { color: "#94a3b8", fontSize: 14, marginTop: 4 },
+  fsRoot:   { flex: 1, backgroundColor: "#000" },
+  fsOffline: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#0f172a",
+    justifyContent: "center", alignItems: "center",
+  },
+  fsOfflineText: { color: "#94a3b8", fontSize: 17, fontWeight: "700", marginTop: 16 },
+  fsOfflineSub:  { color: "#475569", fontSize: 13, marginTop: 6 },
+
+  // Top overlay bar
+  fsTopBar: {
+    position: "absolute", top: 0, left: 0, right: 0,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingTop: 52, paddingBottom: 18, paddingHorizontal: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  fsTopBarLandscape: { paddingTop: 20, paddingBottom: 14 },
+
+  fsLivePill: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(220,38,38,0.9)",
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  fsLiveDot:  { width: 7, height: 7, borderRadius: 4, backgroundColor: "#fff" },
+  fsLiveText: { color: "#fff", fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+
+  fsTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+
+  fsCloseBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "rgba(30,41,59,0.85)",
+    justifyContent: "center", alignItems: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+  },
+
+  // Bottom overlay bar
+  fsBottomBar: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    alignItems: "center",
+    paddingTop: 16, paddingBottom: 32, paddingHorizontal: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  fsBottomBarLandscape: { paddingBottom: 18, paddingTop: 10 },
+
+  fsTime: { color: "#fff", fontSize: 30, fontWeight: "700", letterSpacing: 1 },
+  fsDate: { color: "rgba(255,255,255,0.55)", fontSize: 13, marginTop: 4 },
 });
