@@ -1,12 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator, Alert, Animated, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
-import { auth } from "../firebase/config";
 import { useTheme } from "../context/ThemeContext";
 
 const ACCOUNTS_KEY  = "@smart_home_accounts";
@@ -23,24 +21,28 @@ const PAD = [
 export default function PasscodeLoginScreen({ navigation }) {
   const { theme, isDark } = useTheme();
 
-  const [accounts,  setAccounts]  = useState([]);
-  const [selected,  setSelected]  = useState(null);
-  const [pin,       setPin]       = useState("");
-  const [attempts,  setAttempts]  = useState(0);
-  const [loading,   setLoading]   = useState(true);
-  const [signingIn, setSigningIn] = useState(false);
-  const [errorMsg,  setErrorMsg]  = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [pin,      setPin]      = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [loading,  setLoading]  = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  // ── Load accounts from AsyncStorage ─────────────────────────────────────────
+  // ── Load accounts from AsyncStorage, stripping any legacy plaintext passwords ─
   useEffect(() => {
     (async () => {
       try {
         const raw  = await AsyncStorage.getItem(ACCOUNTS_KEY);
         const list = raw ? JSON.parse(raw) : [];
-        setAccounts(list);
-        if (list.length === 1) setSelected(list[0]);
+        // Migrate: remove password field from any previously stored entries
+        const cleaned = list.map(({ uid, email, passcode }) => ({ uid, email, passcode }));
+        if (list.some((a) => a.password !== undefined)) {
+          await AsyncStorage.setItem(ACCOUNTS_KEY, JSON.stringify(cleaned));
+        }
+        setAccounts(cleaned);
+        if (cleaned.length === 1) setSelected(cleaned[0]);
       } catch {
         setAccounts([]);
       } finally {
@@ -65,7 +67,7 @@ export default function PasscodeLoginScreen({ navigation }) {
   const dots = Array.from({ length: CODE_LEN }, (_, i) => i < pin.length);
 
   const handleDigit = (d) => {
-    if (!selected || pin.length >= CODE_LEN || signingIn) return;
+    if (!selected || pin.length >= CODE_LEN) return;
     const next = pin + d;
     setPin(next);
     setErrorMsg("");
@@ -73,13 +75,12 @@ export default function PasscodeLoginScreen({ navigation }) {
   };
 
   const handleDelete = () => {
-    if (signingIn) return;
     setPin((p) => p.slice(0, -1));
     setErrorMsg("");
   };
 
   // ── Submit passcode ───────────────────────────────────────────────────────────
-  const submitPin = async (entered) => {
+  const submitPin = (entered) => {
     const stored = selected?.passcode != null ? String(selected.passcode).trim() : null;
 
     if (!stored) {
@@ -106,20 +107,7 @@ export default function PasscodeLoginScreen({ navigation }) {
       return;
     }
 
-    // Correct — sign in silently with stored Firebase credentials
-    setSigningIn(true);
-    try {
-      await signInWithEmailAndPassword(auth, selected.email, selected.password);
-      navigation.replace("Home");
-    } catch {
-      setSigningIn(false);
-      setPin("");
-      Alert.alert(
-        "Session Expired",
-        "Please log in with your email and password to refresh your session.",
-        [{ text: "OK", onPress: () => navigation.replace("Login") }],
-      );
-    }
+    navigation.replace("Home");
   };
 
   // ── Select account ────────────────────────────────────────────────────────────
@@ -237,14 +225,9 @@ export default function PasscodeLoginScreen({ navigation }) {
             ))}
           </Animated.View>
 
-          {/* Error / spinner */}
+          {/* Error */}
           <View style={styles.errorBox}>
-            {errorMsg
-              ? <Text style={styles.errorText}>{errorMsg}</Text>
-              : signingIn
-              ? <ActivityIndicator size="small" color={theme.primary} />
-              : null
-            }
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
           </View>
 
           {/* Numpad */}
@@ -263,7 +246,6 @@ export default function PasscodeLoginScreen({ navigation }) {
                       ]}
                       onPress={() => isDel ? handleDelete() : handleDigit(key)}
                       activeOpacity={0.6}
-                      disabled={signingIn}
                     >
                       {isDel
                         ? <MaterialIcons name="backspace" size={22} color={theme.subtext} />
