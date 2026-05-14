@@ -78,11 +78,14 @@ export default function HomeScreen({ navigation }) {
     return () => clearInterval(t);
   }, []);
 
-  // Sensor simulation every 5 s
+  // Keep a ref so the interval always calls the latest simulateSensors
+  // without restarting on every Firestore update
+  const simulateSensorsRef = useRef(simulateSensors);
+  useEffect(() => { simulateSensorsRef.current = simulateSensors; }, [simulateSensors]);
   useEffect(() => {
-    const i = setInterval(() => simulateSensors(), 5000);
+    const i = setInterval(() => simulateSensorsRef.current(), 5000);
     return () => clearInterval(i);
-  }, [simulateSensors]);
+  }, []);
 
 
   const formatTime = (d) =>

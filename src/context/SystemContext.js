@@ -175,21 +175,14 @@ export function SystemProvider({ children }) {
     const outdoorLed = motionDetected;
     const motionChanged = motionDetected !== devices.motionDetected;
 
-    updateDevice(
-      { temperature, motionDetected, outdoorLed },
-      motionDetected
-        ? { icon: "directions-run", color: "#ef4444", text: "Motion detected" }
-        : null,
-    );
+    updateDevice({ temperature, motionDetected, outdoorLed });
 
     if (motionChanged) {
-      logActivity({
-        icon: "wb-sunny",
-        color: "#22c55e",
-        text: outdoorLed
-          ? "Outdoor LED on — triggered by motion"
-          : "Outdoor LED off — motion cleared",
-      });
+      logActivity(
+        motionDetected
+          ? { icon: "directions-run", color: "#ef4444", text: "Motion detected — outdoor LED on" }
+          : { icon: "wb-sunny",       color: "#22c55e", text: "Motion cleared — outdoor LED off" },
+      );
     }
   };
 
