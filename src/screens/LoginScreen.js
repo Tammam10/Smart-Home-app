@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { get, ref } from "firebase/database";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,11 +15,21 @@ import {
 } from "react-native";
 import { auth, rtdb } from "../firebase/config";
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
+const REMEMBERED_EMAIL_KEY = "@remembered_email";
+
+export default function LoginScreen({ navigation, route }) {
+  const prefillEmail = route?.params?.prefillEmail ?? "";
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (prefillEmail) return;
+    AsyncStorage.getItem(REMEMBERED_EMAIL_KEY).then((saved) => {
+      if (saved) { setEmail(saved); setRememberMe(true); }
+    });
+  }, []);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,10 +65,15 @@ export default function LoginScreen({ navigation }) {
         const raw = await AsyncStorage.getItem("@smart_home_accounts");
         const list = raw ? JSON.parse(raw) : [];
         const idx = list.findIndex((a) => a.uid === user.uid);
-        const entry = { uid: user.uid, email: email.trim(), passcode, password };
+        const entry = { uid: user.uid, email: email.trim(), passcode };
         if (idx >= 0) list[idx] = entry; else list.push(entry);
         await AsyncStorage.setItem("@smart_home_accounts", JSON.stringify(list));
       } catch { /* silent — don't block login */ }
+      if (rememberMe) {
+        AsyncStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim()).catch(() => {});
+      } else {
+        AsyncStorage.removeItem(REMEMBERED_EMAIL_KEY).catch(() => {});
+      }
       navigation.replace("Home");
     } catch (error) {
       const messages = {

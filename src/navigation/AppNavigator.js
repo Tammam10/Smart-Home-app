@@ -5,7 +5,6 @@ import AboutScreen from "../screens/AboutScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import EmergencyScreen from "../screens/EmergencyScreen";
 import GateScreen from "../screens/GateScreen";
-import PasscodeScreen from "../screens/PasscodeScreen";
 import PasscodeLoginScreen from "../screens/PasscodeLoginScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -68,11 +67,6 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Gate"
           component={GateScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Passcode"
-          component={PasscodeScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
