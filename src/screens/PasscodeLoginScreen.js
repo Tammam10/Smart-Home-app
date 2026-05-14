@@ -5,6 +5,8 @@ import {
   ActivityIndicator, Alert, Animated, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
+import { ref, set } from "firebase/database";
+import { rtdb } from "../firebase/config";
 import { useTheme } from "../context/ThemeContext";
 
 const ACCOUNTS_KEY  = "@smart_home_accounts";
@@ -107,6 +109,7 @@ export default function PasscodeLoginScreen({ navigation }) {
       return;
     }
 
+    set(ref(rtdb, "activeUid"), selected.uid).catch(() => {});
     navigation.replace("Home");
   };
 

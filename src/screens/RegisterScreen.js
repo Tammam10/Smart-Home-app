@@ -56,11 +56,12 @@ export default function RegisterScreen({ navigation }) {
         const raw = await AsyncStorage.getItem("@smart_home_accounts");
         const list = raw ? JSON.parse(raw) : [];
         const idx = list.findIndex((a) => a.uid === user.uid);
-        const entry = { uid: user.uid, email: email.trim(), passcode, password };
+        const entry = { uid: user.uid, email: email.trim(), passcode };
         if (idx >= 0) list[idx] = entry; else list.push(entry);
         await AsyncStorage.setItem("@smart_home_accounts", JSON.stringify(list));
       } catch { /* silent — account is created, storage failure won't block login */ }
 
+      set(ref(rtdb, "activeUid"), user.uid).catch(() => {});
       navigation.replace("Home");
     } catch (error) {
       const messages = {

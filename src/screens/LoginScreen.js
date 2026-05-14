@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
-import { get, ref } from "firebase/database";
+import { get, ref, set } from "firebase/database";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -74,6 +74,7 @@ export default function LoginScreen({ navigation, route }) {
       } else {
         AsyncStorage.removeItem(REMEMBERED_EMAIL_KEY).catch(() => {});
       }
+      set(ref(rtdb, "activeUid"), user.uid).catch(() => {});
       navigation.replace("Home");
     } catch (error) {
       const messages = {
