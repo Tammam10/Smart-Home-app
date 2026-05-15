@@ -19,7 +19,7 @@ export default function HomeScreen({ navigation }) {
     doorLocked, setDoorLocked,
     alarmActive, outdoorLed,
     temperature, motionDetected,
-    activityLog, simulateSensors, loading, streamUrl,
+    activityLog, loading, streamUrl,
     gateStatus,
   } = useSystem();
 
@@ -89,16 +89,6 @@ export default function HomeScreen({ navigation }) {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     }
   }, [isCameraFullScreen]);
-
-  // Keep a ref so the interval always calls the latest simulateSensors
-  // without restarting on every Firestore update
-  const simulateSensorsRef = useRef(simulateSensors);
-  useEffect(() => { simulateSensorsRef.current = simulateSensors; }, [simulateSensors]);
-  useEffect(() => {
-    const i = setInterval(() => simulateSensorsRef.current(), 5000);
-    return () => clearInterval(i);
-  }, []);
-
 
   const formatTime = (d) =>
     d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });

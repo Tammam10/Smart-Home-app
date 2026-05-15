@@ -166,26 +166,6 @@ export function SystemProvider({ children }) {
     if (logEntry) logActivity(logEntry);
   };
 
-  // Simulates temperature & motion sensor updates every 5 seconds from HomeScreen
-  // Outdoor LED is automatically driven by motion state — paused during emergency mode
-  const simulateSensors = () => {
-    if (devices.alarmActive) return;
-    const temperature = Math.floor(Math.random() * 10) + 20;
-    const motionDetected = Math.random() > 0.7;
-    const outdoorLed = motionDetected;
-    const motionChanged = motionDetected !== devices.motionDetected;
-
-    updateDevice({ temperature, motionDetected, outdoorLed });
-
-    if (motionChanged) {
-      logActivity(
-        motionDetected
-          ? { icon: "directions-run", color: "#ef4444", text: "Motion detected — outdoor LED on" }
-          : { icon: "wb-sunny",       color: "#22c55e", text: "Motion cleared — outdoor LED off" },
-      );
-    }
-  };
-
   const activateEmergencyMode = () => {
     updateDevice(
       { led1: true, led2: true, outdoorLed: true, doorLocked: true, alarmActive: true, gateCommand: "close" },
@@ -231,7 +211,6 @@ export function SystemProvider({ children }) {
         temperature: devices.temperature,
         motionDetected: devices.motionDetected,
         activityLog,
-        simulateSensors,
         loading,
       }}
     >
